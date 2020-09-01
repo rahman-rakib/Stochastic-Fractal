@@ -31,7 +31,13 @@ class StochasticFragmentation:
         # how many times
         self.ensemble_size = 1 # at least once
         self.time_iteration = 0 # it will be set when run() executes
+
+        # loggin
+        self.logging = False
         pass
+
+    def log(self, flag=False):
+        self.logging = flag
 
     def get_signature(self):
         return "StochasticFragmentation"
@@ -176,18 +182,25 @@ class StochasticFragmentation:
         j_header['ensemble_size'] = self.ensemble_size
         j_header['desc'] = header_description
         self.header_str = json.dumps(j_header)
-        pass
+        return j_header
 
     def get_filename(self):
         signature = self.get_signature()
         filename = signature
         filename += "_time-iteration_{}".format(self.time_iteration)
         filename += "_ensemble_{}_".format(self.ensemble_size)
+        header = self.get_header()
+        date_time = header['date_time']
+        filename += date_time
+        filename += ".txt"
         return filename
 
 
 # df
 class NumberLength(StochasticFragmentation):
+    """
+
+    """
     def number_length(self):
         lengths = np.array(self.length_list)
         lengths = lengths[self.flag_list]
@@ -249,7 +262,7 @@ class NumberLength(StochasticFragmentation):
         M_ensemble = None
         step=int(ensemble_size/1000) + 1
         for i in range(ensemble_size):
-            if i % step == 0:
+            if i % step == 0 and self.logging:
                 print("working with realization ", i)
                 pass
             self.reset()
@@ -270,6 +283,9 @@ class NumberLength(StochasticFragmentation):
 
 # xdf
 class FractalLength(StochasticFragmentation):
+    """
+
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fractal_dim = kwargs['fractal_dim']
@@ -322,7 +338,7 @@ class FractalLength(StochasticFragmentation):
 
         step=int(ensemble_size/1000) + 1
         for i in range(ensemble_size):
-            if i % step == 0:
+            if i % step == 0 and self.logging:
                 print("working with realization ", i)
                 pass
             self.reset()
@@ -340,14 +356,24 @@ class FractalLength(StochasticFragmentation):
 
 # to get the lengths after n iteration
 class TrueLengths(StochasticFragmentation):
+    """
+
+    """
+    def __init__(self, **kwargs):
+        super(TrueLengths, self).__init__(**kwargs)
+        print("Turning on logging")
+        self.log(True)
+
     def get_signature(self):
         a = super().get_signature()
         return a + "_Lengths_"
 
     def save_to_file(self, directory, header_description):
         filename = self.get_filename()
-        header_str = self.get_header(header_description)
-
+        # header = self.get_header(header_description)
+        # date_time = header['date_time']
+        # filename += date_time
+        # filename += ".txt"
         np.savetxt(directory + filename, self.lengths_ensemble, header=self.header_str)
 
     def run(self, time_iteration):
@@ -372,7 +398,7 @@ class TrueLengths(StochasticFragmentation):
         self.lengths_ensemble = np.array([])
         step=int(ensemble_size/1000) + 1
         for i in range(ensemble_size):
-            if i % step == 0:
+            if i % step == 0 and self.logging:
                 print("working with realization ", i)
                 pass
             self.reset()
