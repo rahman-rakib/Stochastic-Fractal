@@ -282,28 +282,45 @@ class NumberLength(StochasticFragmentation):
 
 
 # xdf
-class FractalLength(StochasticFragmentation):
+class Moment(StochasticFragmentation):
     """
 
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.fractal_dim = kwargs['fractal_dim']
+        key = "fractal_dim"
+        self.exponent = None
+        if key in kwargs.keys():
+            self.exponent = kwargs[key]
+            pass
+        key = "exponent"
+        if key in kwargs.keys():
+            self.exponent = kwargs[key]
+            pass
+        if self.exponent is None:
+            print("Key 'fractal_dim' or 'exponent' not found!")
         pass
 
-    def fractal_length(self):
+    def k_th_moment(self):
         M_frac = 0
 
         # segment_lengths = self.length_list[self.flag_list]
         for i in range(len(self.flag_list)):
             if self.flag_list[i]:
-                M_frac += self.length_list[i] ** self.fractal_dim
+                M_frac += self.length_list[i] ** self.exponent
         # for ll in segment_lengths:
         #     M_frac += ll**self.fractal_dim
 
         return M_frac
 
-    def run(self, time_iteration, min_iteration, iteration_step, data_point=False):
+    def run(self, time_iteration, min_iteration, iteration_step):
+        """
+
+        :param time_iteration: Total time iteration
+        :param min_iteration:  when to start recording
+        :param iteration_step: interval after which it will be recorded
+        :return:
+        """
         # lengths = [1.]
         # flags = [True]
         # frag_prob = [1.]  # raw probability, not normalized
@@ -315,26 +332,24 @@ class FractalLength(StochasticFragmentation):
         for i in range(time_iteration + 1):
             self.one_time_step()
             if (i > min_iteration) and (i % iteration_step == 0):
-                M_frac = self.fractal_length()
+                M_frac = self.k_th_moment()
             # if i + 1 in iteration_list:
             #     M_frac = fractal_length(lengths, flags)
                 M_realization.append(M_frac)
             pass
-        if data_point:
-            print(np.array(M_realization))
-        else:
-            M_frac = self.fractal_length()
-            return M_frac
 
-    def run_ensemble(self, ensemble_size, time_iteration, start_at, step):
+        return np.array(M_realization)
+
+
+    def run_ensemble(self, ensemble_size, time_iteration, start_at, step_interval):
         """
 
         :param ensemble_size: ensemble size
         :param time_iteration: total number of time steps
         :param start_at:       minimum number of step before we start recording data
-        :param step: number of step between successive data record
+        :param step_interval: number of step between successive data record
         """
-        M_ensemble = 0
+        M_ensemble = None
 
         step=int(ensemble_size/1000) + 1
         for i in range(ensemble_size):
@@ -342,8 +357,11 @@ class FractalLength(StochasticFragmentation):
                 print("working with realization ", i)
                 pass
             self.reset()
-            M_list = self.run(time_iteration, start_at, step)
-            M_ensemble += M_list
+            M_list = self.run(time_iteration, start_at, step_interval)
+            if M_ensemble is None:
+                M_ensemble = M_list
+            else:
+                M_ensemble += M_list
             pass
 
         M_average = M_ensemble / ensemble_size
