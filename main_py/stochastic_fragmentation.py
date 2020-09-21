@@ -41,10 +41,13 @@ class StochasticFragmentation:
         self.logging = flag
 
     def get_signature(self):
-        return "StochasticFragmentation"
+        sig = "StochasticFragmentation"
+        sig += "_alpha_{}".format(self.alpha)
+        sig += "_p_{}".format(self.prob)
+        return sig
 
     def reset(self):
-        self.normC = 1.0  # normalization constant
+        self.normC = 1.0  # normalization constant TODO
         self.probability_list = [1.0]
         self.length_list = [1.0]
         self.flag_list = [True]
@@ -236,10 +239,10 @@ class StochasticFragmentation:
 # df
 class NumberLength(StochasticFragmentation):
     """
-
+    In order to find the fractal dimension
     """
     def get_signature(self):
-        return super(NumberLength, self).get_signature() + "NumberLength"
+        return super(NumberLength, self).get_signature() + "_NumberLength"
 
     def number_length(self):
         lengths = np.array(self.length_list)
@@ -304,25 +307,31 @@ class NumberLength(StochasticFragmentation):
 
         ensemble_data = None
         step_temp=int(ensemble_size / 100)
+        if step_temp == 0:
+            step_temp += 1
+            pass
         start_time = time.time()
+        interval_time = time.time()
         for i in range(ensemble_size):
-            if i % step_temp == 0 and self.logging:
-                print("realization ", i, " . Time spent ", (time.time()-start_time), " sec")
-                start_time = time.time()
-                pass
+
             self.reset()
             out_data_N_M = self.run(time_iteration, start_at, number_of_data_points)
             if ensemble_data is None:
                 ensemble_data = out_data_N_M
             else:
                 ensemble_data += out_data_N_M
+                pass
+            if i % step_temp == 0 and self.logging:
+                print("realization ", i+1, " . Time spent ", (time.time() - interval_time), " sec")
+                interval_time = time.time()
+                pass
             pass
 
         data_average = ensemble_data / ensemble_size
 
         self.time_iteration = time_iteration
         self.ensemble_size = ensemble_size
-
+        print("Total time spent ", (time.time() - start_time), " sec")
         return data_average
     pass
 
@@ -330,7 +339,8 @@ class NumberLength(StochasticFragmentation):
 # xdf
 class Moment(StochasticFragmentation):
     """
-
+    finding n-th moment.
+    df-th moment is always conserved.
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -347,6 +357,11 @@ class Moment(StochasticFragmentation):
             print("Key 'fractal_dim' or 'exponent' not found!")
         pass
 
+    def get_signature(self):
+        sig = super(Moment, self).get_signature()
+        sig += "_Moment"
+        return sig
+
     def k_th_moment(self):
         M_frac = 0
 
@@ -359,7 +374,7 @@ class Moment(StochasticFragmentation):
 
         return M_frac
 
-    def run(self, time_iteration, min_iteration, iteration_step):
+    def run(self, time_iteration, min_iteration, number_of_points):
         """
 
         :param time_iteration: Total time iteration
@@ -375,9 +390,10 @@ class Moment(StochasticFragmentation):
         # iteration_list = list(range(min_iteration, time_iteration + 1, iteration_step))
 
         M_realization = []
+        step_size = int((time_iteration - min_iteration) / number_of_points)
         for i in range(time_iteration + 1):
             self.one_time_step()
-            if (i > min_iteration) and (i % iteration_step == 0):
+            if (i > min_iteration) and (i % step_size == 0):
                 M_frac = self.k_th_moment()
             # if i + 1 in iteration_list:
             #     M_frac = fractal_length(lengths, flags)
@@ -397,24 +413,30 @@ class Moment(StochasticFragmentation):
         """
         M_ensemble = None
 
-        step=int(ensemble_size/100)
+        step_temp=int(ensemble_size/100)
+        if step_temp == 0:
+            step_temp += 1
+            pass
         start_time = time.time()
+        interval_time = time.time()
         for i in range(ensemble_size):
-            if i % step == 0 and self.logging:
-                print("realization ", i, " . Time spent ", (start_time - time.time()), " sec")
-                start_time = time.time()
-                pass
+
             self.reset()
             M_list = self.run(time_iteration, start_at, step_interval)
             if M_ensemble is None:
                 M_ensemble = M_list
             else:
                 M_ensemble += M_list
+                pass
+            if i % step_temp == 0 and self.logging:
+                print("realization ", i + 1, " . Time spent ", (time.time() - interval_time), " sec")
+                interval_time = time.time()
+                pass
             pass
 
         M_average = M_ensemble / ensemble_size
-
-        print(M_average)
+        print("Total time spent ", (time.time() - start_time), " sec")
+        # print(M_average)
         return M_average
 
     pass
@@ -432,7 +454,7 @@ class TrueLengths(StochasticFragmentation):
 
     def get_signature(self):
         a = super().get_signature()
-        return a + "_Lengths_"
+        return a + "_Lengths"
 
     def save_to_file(self, directory, header_description):
         filename = self.get_filename()
@@ -462,17 +484,22 @@ class TrueLengths(StochasticFragmentation):
         """
         self.ensemble_size = ensemble_size
         self.lengths_ensemble = np.array([])
-        step=int(ensemble_size/100)
+        step_temp=int(ensemble_size/100)
+        if step_temp == 0:
+            step_temp = 1
+            pass
         start_time = time.time()
+        interval_time = time.time()
         for i in range(ensemble_size):
-            if i % step == 0 and self.logging:
-                print("realization ", i, " . Time spent ", (start_time - time.time()), " sec")
-                start_time = time.time()
-                pass
+
             self.reset()
             length = self.run(time_iteration)
             self.lengths_ensemble = np.append(self.lengths_ensemble, length)
+            if i % step_temp == 0 and self.logging:
+                print("realization ", i + 1, " . Time spent ", (time.time() - interval_time), " sec")
+                interval_time = time.time()
+                pass
             pass
-
+        print("Total time spent ", (time.time() - start_time), " sec")
         return self.lengths_ensemble
     pass
