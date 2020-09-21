@@ -2,6 +2,7 @@ import random
 import numpy as np
 import datetime
 import json
+import time
 
 
 class StochasticFragmentation:
@@ -119,6 +120,15 @@ class StochasticFragmentation:
         """
         picks up a segment to be subsequently split
         """
+        # return self.pickindex_v1()
+        return self.pickindex_v2()
+
+
+    def pickindex_v1(self):
+        """
+        from old algorighm
+        picks up a segment to be subsequently split
+        """
         r = random.uniform(0, 1)
         sum_ = 0
         for index in range(len(self.probability_list)):
@@ -130,6 +140,29 @@ class StochasticFragmentation:
             pass
         print("out of range. return None")
         pass
+
+    def pickindex_v2(self):
+        """
+        NEW algorithm. Seems to be accurate one. agrees with Theoritical funciton.
+        picks up a segment to be subsequently split
+        """
+        # print("pickindex_v2")
+        # print("self.probability_list ", self.probability_list)
+        r = random.uniform(0, 1.0)  # 1 is the initial particle size
+        if r > self.normC:
+            # print("r > self.normC => return None")
+            return None
+        sum_ = 0
+        for index in range(len(self.probability_list)):
+            sum_ += self.probability_list[index]
+            # print("[", index, "] => ", self.probability_list[index], " .cumsum = ", sum_)
+            if sum_ < r:
+                continue
+            else:
+                return index
+            pass
+        print("out of range. return None")
+        return None
 
     def view(self):
         print("viewing status")
@@ -147,7 +180,9 @@ class StochasticFragmentation:
         pass
 
     def one_time_step(self):
+        # print("StochasticFragmentation.one_time_step")
         index = self.pickindex()
+        # print("index ", index)
         if (type(index) == int) and self.flag_list[index]:
             xL, xR, flag, xLp, xRp, change = self.splitting(self.length_list[index])
 
@@ -180,6 +215,8 @@ class StochasticFragmentation:
         j_header['time_iteration'] = self.time_iteration
         j_header['date_time'] = date_time
         j_header['ensemble_size'] = self.ensemble_size
+        j_header['alpha'] = self.alpha
+        j_header['probability'] = self.prob
         j_header['desc'] = header_description
         self.header_str = json.dumps(j_header)
         return j_header
@@ -201,6 +238,9 @@ class NumberLength(StochasticFragmentation):
     """
 
     """
+    def get_signature(self):
+        return super(NumberLength, self).get_signature() + "NumberLength"
+
     def number_length(self):
         lengths = np.array(self.length_list)
         lengths = lengths[self.flag_list]
@@ -218,23 +258,25 @@ class NumberLength(StochasticFragmentation):
         #             print("not equal")
         return segment_count, surviving_length_sum
 
-    def run(self, time_iteration, min_iteration, iteration_step):
+    def run(self, time_iteration, min_iteration, number_of_points):
         """
         we run the `one_time_step()` method `time_iteration` times. We record some information
         at `iteration_step` step interval starting from `min_iteration`
-        :param time_iteration:
-        :param min_iteration:
-        :param iteration_step:
-        :return:
+        :param time_iteration: maximum time step
+        :param min_iteration: starting point to record data
+        :param number_of_points: number of data points
+        :return: a numpy array with two columns,
+                1st column is the particle counts and
+                2nd column is the sum of surviving particle sizes
         """
         # iteration_list = list(range(min_iteration, time_iteration + 1, iteration_step))
         N_realization = []
         M_realization = []
-
+        step_size = int((time_iteration - min_iteration)/number_of_points)
         for i in range(time_iteration + 1):
             #             print("time step ", i)
             self.one_time_step()
-            if (i > min_iteration) and (i % iteration_step == 0):
+            if (i > min_iteration) and (i % step_size == 0):
 
             # if i + 1 in iteration_list:
                 segment_count, surviving_length_sum = self.number_length()
@@ -244,40 +286,44 @@ class NumberLength(StochasticFragmentation):
 
         N_list = np.array(N_realization)
         M_list = np.array(M_realization)
+        self.time_iteration = time_iteration
+        return np.c_[N_list, M_list]
 
-        return N_list, M_list
-
-    def run_ensemble(self, ensemble_size, time_iteration, start_at, step):
+    def run_ensemble(self, ensemble_size, time_iteration, start_at, number_of_data_points):
         """
 
         :param ensemble_size: ensemble size
         :param time_iteration: total number of time steps
         :param start_at:       minimum number of step before we start recording data
-        :param step: number of step between successive data record
+        :param number_of_data_points: number of data poitns. starting from `start_at` it will take `number_of_data_points`
+                data points upto time `time_iteration`
         :return: [N, M] average value
                 where, N = number of particles at particular time steps
                        M = sum of surviving length at those time steps
         """
-        N_ensemble = None
-        M_ensemble = None
-        step=int(ensemble_size/1000) + 1
+
+        ensemble_data = None
+        step_temp=int(ensemble_size / 100)
+        start_time = time.time()
         for i in range(ensemble_size):
-            if i % step == 0 and self.logging:
-                print("working with realization ", i)
+            if i % step_temp == 0 and self.logging:
+                print("realization ", i, " . Time spent ", (time.time()-start_time), " sec")
+                start_time = time.time()
                 pass
             self.reset()
-            N_list, M_list = self.run(time_iteration, start_at, step)
-            if M_ensemble is None:
-                N_ensemble = N_list
-                M_ensemble = M_list
+            out_data_N_M = self.run(time_iteration, start_at, number_of_data_points)
+            if ensemble_data is None:
+                ensemble_data = out_data_N_M
             else:
-                N_ensemble += N_list
-                M_ensemble += M_list
+                ensemble_data += out_data_N_M
             pass
 
-        N_average = N_ensemble / ensemble_size
-        M_average = M_ensemble / ensemble_size
-        return N_average, M_average
+        data_average = ensemble_data / ensemble_size
+
+        self.time_iteration = time_iteration
+        self.ensemble_size = ensemble_size
+
+        return data_average
     pass
 
 
@@ -351,10 +397,12 @@ class Moment(StochasticFragmentation):
         """
         M_ensemble = None
 
-        step=int(ensemble_size/1000) + 1
+        step=int(ensemble_size/100)
+        start_time = time.time()
         for i in range(ensemble_size):
             if i % step == 0 and self.logging:
-                print("working with realization ", i)
+                print("realization ", i, " . Time spent ", (start_time - time.time()), " sec")
+                start_time = time.time()
                 pass
             self.reset()
             M_list = self.run(time_iteration, start_at, step_interval)
@@ -414,10 +462,12 @@ class TrueLengths(StochasticFragmentation):
         """
         self.ensemble_size = ensemble_size
         self.lengths_ensemble = np.array([])
-        step=int(ensemble_size/1000) + 1
+        step=int(ensemble_size/100)
+        start_time = time.time()
         for i in range(ensemble_size):
             if i % step == 0 and self.logging:
-                print("working with realization ", i)
+                print("realization ", i, " . Time spent ", (start_time - time.time()), " sec")
+                start_time = time.time()
                 pass
             self.reset()
             length = self.run(time_iteration)

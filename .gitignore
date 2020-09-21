@@ -4,5 +4,7 @@ notebooks/.ipynb_checkpoints/*
 *.pyc
 notebooks/.ipynb_checkpoints/*
 main_jupyter/.ipynb_checkpoints/*
+data/*
+figures/*
 
 
