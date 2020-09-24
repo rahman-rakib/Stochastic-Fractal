@@ -37,6 +37,16 @@ class StochasticFragmentation:
         self.logging = False
         pass
 
+    def get_alpha(self):
+        return self.alpha
+
+    def get_probability(self):
+        return self.prob
+
+    def get_df(self):
+        from main_py import df_determination
+        return df_determination.find_df(self.alpha, self.prob)
+
     def log(self, flag=False):
         self.logging = flag
 
@@ -318,7 +328,6 @@ class Moment(StochasticFragmentation):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        from main_py import df_determination
         key = "fractal_dim"
         self.exponent = None
         if key in kwargs.keys():
@@ -329,7 +338,7 @@ class Moment(StochasticFragmentation):
             self.exponent = kwargs[key]
             pass
         if self.exponent is None:
-            self.exponent = df_determination.find_df(self.alpha,self.prob)
+            self.exponent = self.get_df()
             print("Key 'fractal_dim' or 'exponent' not found!")
         pass
 
