@@ -2,9 +2,5 @@ notebooks/.ipynb_checkpoints/*
 .idea/*
 *checkpoint.ipynb
 *.pyc
-notebooks/.ipynb_checkpoints/*
 main_jupyter/.ipynb_checkpoints/*
-data/*
-figures/*
-
-
+data/temp/*

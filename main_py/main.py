@@ -35,10 +35,15 @@ def test_moment():
     sfl.run_ensemble(10, 1000, 500, 10)
     pass
 
+def test_df_determination():
+    from main_py import df_determination
+    df_determination.test()
+
 def main():
     test_number_length()
     test_true_length()
     test_moment()
+    test_df_determination()
     pass
 
 

@@ -7,7 +7,7 @@ import time
 
 class StochasticFragmentation:
     """
-    Simulatin for Stochastic Binary Fragmentation
+    Simulation for Stochastic Binary Fragmentation
     """
     def __init__(self, **kwargs):
         """
@@ -23,7 +23,7 @@ class StochasticFragmentation:
 
         # variables
         self.expon = 2 * self.alpha - 1
-        self.normC = 1.0  # normalization constant
+        self.fragment_sum = 1.0  # normalization constant
         self.probability_list = [1.0]
         self.length_list = [1.0]
         self.flag_list = [True]
@@ -47,7 +47,7 @@ class StochasticFragmentation:
         return sig
 
     def reset(self):
-        self.normC = 1.0  # normalization constant TODO
+        self.fragment_sum = 1.0  # normalization constant TODO
         self.probability_list = [1.0]
         self.length_list = [1.0]
         self.flag_list = [True]
@@ -123,36 +123,10 @@ class StochasticFragmentation:
         """
         picks up a segment to be subsequently split
         """
-        # return self.pickindex_v1()
-        return self.pickindex_v2()
-
-
-    def pickindex_v1(self):
-        """
-        from old algorighm
-        picks up a segment to be subsequently split
-        """
-        r = random.uniform(0, 1)
-        sum_ = 0
-        for index in range(len(self.probability_list)):
-            sum_ += self.probability_list[index] / self.normC
-            if sum_ < r:
-                continue
-            else:
-                return index
-            pass
-        print("out of range. return None")
-        pass
-
-    def pickindex_v2(self):
-        """
-        NEW algorithm. Seems to be accurate one. agrees with Theoritical funciton.
-        picks up a segment to be subsequently split
-        """
-        # print("pickindex_v2")
+        # print("pickindex")
         # print("self.probability_list ", self.probability_list)
         r = random.uniform(0, 1.0)  # 1 is the initial particle size
-        if r > self.normC:
+        if r > self.fragment_sum:
             # print("r > self.normC => return None")
             return None
         sum_ = 0
@@ -174,7 +148,7 @@ class StochasticFragmentation:
         print("<length>  <probability>  <flag>")
         for i in range(len(self.length_list)):
             print("{:.5e}, {:.5e}, {:5}".format(self.length_list[i],
-                                                self.probability_list[i] / self.normC,
+                                                self.probability_list[i] / self.fragment_sum,
                                                 self.flag_list[i]
                                                 ))
             pass
@@ -194,7 +168,7 @@ class StochasticFragmentation:
             self.flag_list.append(flag)
             self.probability_list[index] = xLp
             self.probability_list.append(xRp)
-            self.normC += change
+            self.fragment_sum += change
             pass
 
         pass
@@ -344,6 +318,7 @@ class Moment(StochasticFragmentation):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        from main_py import df_determination
         key = "fractal_dim"
         self.exponent = None
         if key in kwargs.keys():
@@ -354,6 +329,7 @@ class Moment(StochasticFragmentation):
             self.exponent = kwargs[key]
             pass
         if self.exponent is None:
+            self.exponent = df_determination.find_df(self.alpha,self.prob)
             print("Key 'fractal_dim' or 'exponent' not found!")
         pass
 
