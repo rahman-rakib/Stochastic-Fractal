@@ -7,7 +7,7 @@ import time
 
 class StochasticFragmentation:
     """
-    Simulatin for Stochastic Binary Fragmentation
+    Simulation for Stochastic Binary Fragmentation
     """
     def __init__(self, **kwargs):
         """
