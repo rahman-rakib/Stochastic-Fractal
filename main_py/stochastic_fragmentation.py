@@ -47,6 +47,9 @@ class StochasticFragmentation:
         from main_py import df_determination
         return df_determination.find_df(self.alpha, self.prob)
 
+    def get_time_iteration(self):
+        return self.time_iteration
+
     def log(self, flag=False):
         self.logging = flag
 
