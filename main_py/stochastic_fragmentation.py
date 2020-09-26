@@ -444,9 +444,9 @@ class TrueLengths(StochasticFragmentation):
         a = super().get_signature()
         return a + "_Lengths"
 
-    def save_to_file(self, directory, header_description):
+    def save_to_file(self, directory, header_description='NA'):
         filename = self.get_filename()
-        # header = self.get_header(header_description)
+        header = self.get_header(header_description)
         # date_time = header['date_time']
         # filename += date_time
         # filename += ".txt"

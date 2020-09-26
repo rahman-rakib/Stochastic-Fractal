@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import gamma
 
-n_star = np.linspace(0,1,100_001)
+n_star = np.linspace(0,1,1_000_001)
 
 def func_trans(n_star,alpha,p):
     """left-hand side of transcendental equation defined as a numpy array"""
