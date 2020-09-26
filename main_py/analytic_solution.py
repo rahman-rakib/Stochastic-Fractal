@@ -40,6 +40,74 @@ def phi_value_alpha_3(xi, p):
     return phi_value
 
 
+class AnalyticSoln:
+    def __init__(self, alpha, probability):
+        self.xi_list = None
+        self.phi_list = None
+        filename = "phi_list_analytic_alpha_3.txt"
+        analytic_data_dir = "../data/alpha3/analytic/"  # data directory
+        self.filename = analytic_data_dir + filename
+        self.data_dct = None
+        self.defined_p = [0.1, 0.5, 0.75, 0.9]
+
+        # read and load data
+        self.read_and_load(probability)
+        pass
+
+    def read_and_load(self, probability):
+        ret = self.check_if_in_list(probability)
+        if ret is None:
+            print('analytical values available only for p equal ', self.defined_p)
+            return None
+
+        p = ret  # so that the values is exactly what it is supposed to be
+        if self.data_dct is None:
+            # load data only once
+            phi_list_tmp = np.loadtxt(self.filename)
+            self.xi_list = phi_list_tmp[:, 0]
+            self.data_dct = dict()
+            self.data_dct[0.1] = phi_list_tmp[:, 1]
+            self.data_dct[0.5] = phi_list_tmp[:, 2]
+            self.data_dct[0.75] = phi_list_tmp[:, 3]
+            self.data_dct[0.9] = phi_list_tmp[:, 4]
+            pass
+
+        self.phi_list = self.data_dct[p]
+        pass
+
+    def check_if_in_list(self, p):
+        flag = False
+        for pp in self.defined_p:
+            flag = abs(p - pp) <= 1e-6
+            if flag:
+                return pp
+            pass
+        return None
+
+    def phi_value_alpha_3_v2(self, xi):
+
+        if xi > 2:
+            phi_value = 0
+        elif xi in self.xi_list:
+            index = list(self.xi_list).index(xi)
+            phi_value = phi_list[index]
+        else:
+            index0 = int(xi // 0.0002)
+            index1 = int(index0 + 1)
+            del_xi = xi % 0.0002
+            phi_0 = phi_list[index0]
+            phi_1 = phi_list[index1]
+            del_phi = (phi_1 - phi_0) * del_xi / 0.0002
+            phi_value = phi_0 + del_phi
+
+        return phi_value
+    pass
+
+
+
+
+
+
 def phi_list_alpha_3(xi_list, p):
     phi_list = []
     for xi in xi_list:
@@ -64,7 +132,7 @@ def phi_list(alpha, p, xi_list):
 
     elif alpha == 3:
         density = phi_list_alpha_3(xi_list, p)
-
+        # density = phi_value_alpha_3_v2(xi_list, p)
     else:
         density = None
         print('the analytical solution for alpha = {} value is unknown'.format(alpha))
