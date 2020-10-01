@@ -70,7 +70,7 @@ class StochasticFragmentation:
         method  : way to choose the pivot point of a given segment
         returns : random value in [0, 1]
         """
-        if method is 'logistic':
+        if method == 'logistic':
             self.choose_pivot = self.logistic_choice
             pass
         self.choose_pivot = self.betadist
