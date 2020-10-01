@@ -4,3 +4,4 @@ notebooks/.ipynb_checkpoints/*
 *.pyc
 main_jupyter/.ipynb_checkpoints/*
 data/temp/*
+figures/temp/*

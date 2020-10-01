@@ -478,13 +478,13 @@ class TrueLengths(StochasticFragmentation):
             pass
         start_time = time.time()
         interval_time = time.time()
-        for i in range(ensemble_size):
+        for i in range(1, ensemble_size+1):
 
             self.reset()
             length = self.run(time_iteration)
             self.lengths_ensemble = np.append(self.lengths_ensemble, length)
             if i % step_temp == 0 and self.logging:
-                print("realization ", i + 1, " . Time spent ", (time.time() - interval_time), " sec")
+                print("realization ", i, " . Time spent ", (time.time() - interval_time), " sec")
                 interval_time = time.time()
                 pass
             pass
