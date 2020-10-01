@@ -5,7 +5,7 @@ from main_py.analytic_solution import AnalyticSoln
 import os
 
 FractalLength = Moment
-find_df = df_determination.find_df
+# find_df = df_determination.find_df
 
 
 from pathlib import Path

@@ -36,15 +36,15 @@ def test_moment():
     pass
 
 
-def test_df_determination():
-    from main_py import df_determination
-    df_determination.test()
+# def test_df_determination():
+#     from main_py import df_determination
+#     df_determination.test()
 
 
 def test_analytic():
     from  main_py import analytic_solution
-    # analytic_solution.test()
-    analytic_solution.test_2()
+    analytic_solution.test()
+    # analytic_solution.test_2()
 
 
 def main():
