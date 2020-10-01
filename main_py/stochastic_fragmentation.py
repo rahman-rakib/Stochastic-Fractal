@@ -44,8 +44,9 @@ class StochasticFragmentation:
         return self.prob
 
     def get_df(self):
-        from main_py import df_determination
-        return df_determination.find_df(self.alpha, self.prob)
+        from main_py import analytic_solution
+        ana_soln = analytic_solution.AnalyticSoln()
+        return ana_soln.find_df(self.alpha, self.prob)
 
     def get_time_iteration(self):
         return self.time_iteration
@@ -299,7 +300,7 @@ class NumberLength(StochasticFragmentation):
             pass
         start_time = time.time()
         interval_time = time.time()
-        for i in range(ensemble_size):
+        for i in range(1, ensemble_size+1):
 
             self.reset()
             out_data_N_M = self.run(time_iteration, start_at, number_of_data_points)
@@ -309,7 +310,7 @@ class NumberLength(StochasticFragmentation):
                 ensemble_data += out_data_N_M
                 pass
             if i % step_temp == 0 and self.logging:
-                print("realization ", i+1, " . Time spent ", (time.time() - interval_time), " sec")
+                print("realization ", i, " . Time spent ", (time.time() - interval_time), " sec")
                 interval_time = time.time()
                 pass
             pass
@@ -343,6 +344,7 @@ class Moment(StochasticFragmentation):
         if self.exponent is None:
             self.exponent = self.get_df()
             print("Key 'fractal_dim' or 'exponent' not found!")
+            print("Theoretical value is used")
         pass
 
     def get_signature(self):
@@ -407,7 +409,7 @@ class Moment(StochasticFragmentation):
             pass
         start_time = time.time()
         interval_time = time.time()
-        for i in range(ensemble_size):
+        for i in range(1, ensemble_size+1):
 
             self.reset()
             M_list = self.run(time_iteration, start_at, step_interval)
@@ -417,7 +419,7 @@ class Moment(StochasticFragmentation):
                 M_ensemble += M_list
                 pass
             if i % step_temp == 0 and self.logging:
-                print("realization ", i + 1, " . Time spent ", (time.time() - interval_time), " sec")
+                print("realization ", i, " . Time spent ", (time.time() - interval_time), " sec")
                 interval_time = time.time()
                 pass
             pass

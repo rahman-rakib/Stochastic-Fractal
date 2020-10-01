@@ -55,16 +55,16 @@ class AnalyticSoln:
         df_rounded = float("{:.6f}".format(df_value))
         return df_rounded
 
-    def phi_value_alpha_3(self, xi, p):
+    def phi_value_alpha_3(self, xi, probability_p):
         """
         df_data : pandas DataFrame
         xi      :
-        p       : probablity
+        probability_p       : probablity
         """
 
-        p_0 = float(round(dc.Decimal(p), 2))
+        p_0 = float(round(dc.Decimal(probability_p), 2))
         p_1 = float(round(dc.Decimal(p_0 + 0.01), 2))
-        del_p = abs(p - p_0)
+        del_p = abs(probability_p - p_0)
 
         if del_p <= 1e-9:
             col_name = 'p={:.2f}'.format(p_0)
