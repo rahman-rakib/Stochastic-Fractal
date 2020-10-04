@@ -108,9 +108,9 @@ class AnalyticSoln:
     def phi_list(self, alpha, probability_p, xi_list=None):
         """
 
-        :param alpha: value of alpha
-        :param probability_p:     value of probabiliy p
-        :param xi_list: independent variable xi. If None then a predefined xi_list is returned
+        :param alpha:           value of alpha
+        :param probability_p:   value of probabiliy p
+        :param xi_list:         independent variable xi. If None then a predefined xi_list is returned
         :return:
         """
         if xi_list is None:

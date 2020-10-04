@@ -52,6 +52,11 @@ class StochasticFragmentation:
         return self.time_iteration
 
     def log(self, flag=False):
+        """
+        to enable logging during simulation. Useful to monitor the progress of the simulation
+        :param flag:
+        :return:
+        """
         self.logging = flag
 
     def get_signature(self):
@@ -61,49 +66,22 @@ class StochasticFragmentation:
         return sig
 
     def reset(self):
+        """
+        After each realization the state of the system must be reset
+        :return:
+        """
         self.fragment_sum = 1.0  # normalization constant TODO
         self.probability_list = [1.0]
         self.length_list = [1.0]
         self.flag_list = [True]
 
-    def set_pivot_choosing_method(self, method='logistic'):
-        """
-        method  : way to choose the pivot point of a given segment
-        returns : random value in [0, 1]
-        """
-        if method == 'logistic':
-            self.choose_pivot = self.logistic_choice
-            pass
-        self.choose_pivot = self.betadist
-        pass
 
     def betadist(self):
         """gives a random number from beta distribution"""
         #         print("betadist")
         return random.betavariate(self.alpha, self.alpha)
 
-    def logistic_xn(self, n, a=2):
-        x0 = random.random()
-        x1 = 0
-        if n < 0:
-            print("n cannot be negative")
-            n = 1
-            pass
-        for i in range(n):
-            x1 = a * x0 * (1 - x0)
-            x0 = x1
-            pass
-        return x0
 
-    def logistic_choice(self):
-        #         print("logistic_choice")
-        beta = self.alpha - 1
-        RR = self.logistic_xn(beta)
-        RRp = 1 - RR
-        r = random.random()
-        if r < 0.5:
-            return RR
-        return RRp
 
     def decision(self):
         """
@@ -122,7 +100,7 @@ class StochasticFragmentation:
             xL -> length of the left segment
             xR -> length of the right segment
             flag -> keeping the right segment
-            xLp, xRp -> probability(unnormalized) for being selected
+            xLp, xRp -> probability of being selected
             change -> change of normalization const
         """
         xL = segment * self.choose_pivot()
@@ -166,11 +144,14 @@ class StochasticFragmentation:
                                                 self.flag_list[i]
                                                 ))
             pass
-        print(np.sum(self.length_list))
-        print(np.sum(self.length_list))
+        print("sum of all lengths : ", np.sum(self.length_list))
         pass
 
     def one_time_step(self):
+        """
+        One step of each time iteration
+        :return:
+        """
         # print("StochasticFragmentation.one_time_step")
         index = self.pickindex()
         # print("index ", index)
@@ -187,19 +168,14 @@ class StochasticFragmentation:
 
         pass
 
-    # def run(self, time_iteration):
-    #
-    #     for i in range(time_iteration + 1):
-    #         #             print("time step ", i)
-    #         self.one_time_step()
-    #
-    #         lengths = np.array(self.length_list)
-    #         lengths = lengths[self.flag_list]
-    #
-    #
-    #     pass
-
     def get_header(self, header_description="NA"):
+        """
+        basic header information to write to the data file.
+        First line of the data fill generated and saved from this program will
+        contatin a json header.
+        :param header_description:
+        :return:
+        """
         x = datetime.datetime.now()
         date_time = x.strftime("%Y%m%d_%H%M%S")
         j_header = dict()
@@ -213,6 +189,11 @@ class StochasticFragmentation:
         return j_header
 
     def get_filename(self):
+        """
+        Multiple run of smaller ensemble to get a large ensemble is a good way of saving time,
+        but the data file name of each independent run must be different for this to work.
+        :return:
+        """
         signature = self.get_signature()
         filename = signature
         filename += "_time-iteration_{}".format(self.time_iteration)
@@ -233,29 +214,27 @@ class NumberLength(StochasticFragmentation):
         return super(NumberLength, self).get_signature() + "_NumberLength"
 
     def number_length(self):
+        """
+
+        :return: N, M
+            N -> number of surviving segments
+            M -> sum of sizes of `N` segments
+        """
         lengths = np.array(self.length_list)
         lengths = lengths[self.flag_list]
         segment_count = lengths.shape[0]
         surviving_length_sum = np.sum(lengths)
 
-        #         surviving_length_sum, N = 0, 0
-        #         for i in range(len(self.flag_list)):
-        #             if self.flag_list[i]:
-        #                 N += 1
-        #                 surviving_length_sum += self.length_list[i]
-        #                 pass
-        #             pass
-        #         if abs(M1-surviving_length_sum) > 1e-10:
-        #             print("not equal")
         return segment_count, surviving_length_sum
 
     def run(self, time_iteration, min_iteration, number_of_points):
         """
+        One realization.
         we run the `one_time_step()` method `time_iteration` times. We record some information
         at `iteration_step` step interval starting from `min_iteration`
         :param time_iteration: maximum time step
         :param min_iteration: starting point to record data
-        :param number_of_points: number of data points
+        :param number_of_points: number of data points we want to generate.
         :return: a numpy array with two columns,
                 1st column is the particle counts and
                 2nd column is the sum of surviving particle sizes
@@ -366,7 +345,7 @@ class Moment(StochasticFragmentation):
 
     def run(self, time_iteration, min_iteration, number_of_points):
         """
-
+        one realization.
         :param time_iteration: Total time iteration
         :param min_iteration:  when to start recording
         :param iteration_step: interval after which it will be recorded
@@ -392,10 +371,9 @@ class Moment(StochasticFragmentation):
 
         return np.array(M_realization)
 
-
     def run_ensemble(self, ensemble_size, time_iteration, start_at, step_interval):
         """
-
+        A number of realization
         :param ensemble_size: ensemble size
         :param time_iteration: total number of time steps
         :param start_at:       minimum number of step before we start recording data
@@ -435,7 +413,8 @@ class Moment(StochasticFragmentation):
 # to get the lengths after n iteration
 class TrueLengths(StochasticFragmentation):
     """
-
+    Segment lengths are appended to a list after `T` iteration in each realization.
+    Histogram is generated from that list of segment lengths.
     """
     def __init__(self, **kwargs):
         super(TrueLengths, self).__init__(**kwargs)
@@ -447,6 +426,12 @@ class TrueLengths(StochasticFragmentation):
         return a + "_Lengths"
 
     def save_to_file(self, directory, header_description='NA'):
+        """
+        To save the simulation data.
+        :param directory:
+        :param header_description:
+        :return:
+        """
         filename = self.get_filename()
         header = self.get_header(header_description)
         # date_time = header['date_time']
@@ -455,6 +440,11 @@ class TrueLengths(StochasticFragmentation):
         np.savetxt(directory + filename, self.lengths_ensemble, header=self.header_str)
 
     def run(self, time_iteration):
+        """
+        One realization.
+        :param time_iteration: maximum time iteration
+        :return:
+        """
         self.time_iteration = time_iteration
         for i in range(time_iteration + 1):
             self.one_time_step()
@@ -467,9 +457,8 @@ class TrueLengths(StochasticFragmentation):
 
     def run_ensemble(self, ensemble_size, time_iteration):
         """
-
-        :param ensemble_size:
-        :param time_iteration:
+        :param ensemble_size: number of independent realization
+        :param time_iteration: maximum time iteration
         :return:
         """
         self.ensemble_size = ensemble_size
