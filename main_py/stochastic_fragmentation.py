@@ -65,6 +65,28 @@ class StochasticFragmentation:
         sig += "_p_{}".format(self.prob)
         return sig
 
+    def get_step_size(self, time_iteration, min_iteration, number_of_points):
+        """
+
+        :param time_iteration:
+        :param min_iteration:
+        :param number_of_points:
+        :return: (`time_iteration` - `min_iteration`) / (`number_of_points` - 1)
+        """
+        a = (time_iteration - min_iteration) / (number_of_points - 1)
+        return a
+
+    def get_number_of_points(self, time_iteration, min_iteration, iteration_step):
+        """
+
+        :param time_iteration:
+        :param min_iteration:
+        :param iteration_step:
+        :return: (`time_iteration` - `min_iteration`) / `iteration_step` + 1
+        """
+        a = (time_iteration-min_iteration) / iteration_step + 1
+        return a
+
     def reset(self):
         """
         After each realization the state of the system must be reset
@@ -75,13 +97,10 @@ class StochasticFragmentation:
         self.length_list = [1.0]
         self.flag_list = [True]
 
-
     def betadist(self):
         """gives a random number from beta distribution"""
         #         print("betadist")
         return random.betavariate(self.alpha, self.alpha)
-
-
 
     def decision(self):
         """
@@ -227,14 +246,14 @@ class NumberLength(StochasticFragmentation):
 
         return segment_count, surviving_length_sum
 
-    def run(self, time_iteration, min_iteration, number_of_points):
+    def run(self, time_iteration, min_iteration, iteration_step):
         """
         One realization.
         we run the `one_time_step()` method `time_iteration` times. We record some information
         at `iteration_step` step interval starting from `min_iteration`
         :param time_iteration: maximum time step
         :param min_iteration: starting point to record data
-        :param number_of_points: number of data points we want to generate.
+        :param iteration_step: number of data points we want to generate.
         :return: a numpy array with two columns,
                 1st column is the particle counts and
                 2nd column is the sum of surviving particle sizes
@@ -242,13 +261,14 @@ class NumberLength(StochasticFragmentation):
         # iteration_list = list(range(min_iteration, time_iteration + 1, iteration_step))
         N_realization = []
         M_realization = []
-        step_size = int((time_iteration - min_iteration)/number_of_points)
-        for i in range(time_iteration + 1):
+        # step_size = self.get_step_size(time_iteration, min_iteration, number_of_points)
+        step_size = iteration_step
+        # print("step size = ", step_size)
+        for i in range(1, time_iteration + 1):
             #             print("time step ", i)
             self.one_time_step()
-            if (i > min_iteration) and (i % step_size == 0):
-
-            # if i + 1 in iteration_list:
+            if (i >= min_iteration) and (i % step_size == 0):
+                # print("t = ", i)
                 segment_count, surviving_length_sum = self.number_length()
                 N_realization.append(segment_count)
                 M_realization.append(surviving_length_sum)
@@ -259,13 +279,14 @@ class NumberLength(StochasticFragmentation):
         self.time_iteration = time_iteration
         return np.c_[N_list, M_list]
 
-    def run_ensemble(self, ensemble_size, time_iteration, start_at, number_of_data_points):
+
+    def run_ensemble(self, ensemble_size, time_iteration, start_at, iteration_step):
         """
 
         :param ensemble_size: ensemble size
         :param time_iteration: total number of time steps
         :param start_at:       minimum number of step before we start recording data
-        :param number_of_data_points: number of data poitns. starting from `start_at` it will take `number_of_data_points`
+        :param iteration_step: starting from `start_at` it will take `number_of_data_points`
                 data points upto time `time_iteration`
         :return: [N, M] average value
                 where, N = number of particles at particular time steps
@@ -282,7 +303,7 @@ class NumberLength(StochasticFragmentation):
         for i in range(1, ensemble_size+1):
 
             self.reset()
-            out_data_N_M = self.run(time_iteration, start_at, number_of_data_points)
+            out_data_N_M = self.run(time_iteration, start_at, iteration_step)
             if ensemble_data is None:
                 ensemble_data = out_data_N_M
             else:
@@ -343,7 +364,7 @@ class Moment(StochasticFragmentation):
 
         return M_frac
 
-    def run(self, time_iteration, min_iteration, number_of_points):
+    def run(self, time_iteration, min_iteration, step_interval):
         """
         one realization.
         :param time_iteration: Total time iteration
@@ -359,10 +380,10 @@ class Moment(StochasticFragmentation):
         # iteration_list = list(range(min_iteration, time_iteration + 1, iteration_step))
 
         M_realization = []
-        step_size = int((time_iteration - min_iteration) / number_of_points)
+        # step_size = step_interval
         for i in range(time_iteration + 1):
             self.one_time_step()
-            if (i > min_iteration) and (i % step_size == 0):
+            if (i > min_iteration) and (i % step_interval == 0):
                 M_frac = self.k_th_moment()
             # if i + 1 in iteration_list:
             #     M_frac = fractal_length(lengths, flags)

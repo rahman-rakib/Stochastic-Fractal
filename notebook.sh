@@ -1,7 +1,7 @@
 ##### Customized
 # run this script from any directory 
 # it will load anaconda from the specified directory
-ROOT_PATH="$(echo) $HOME/software"
+ROOT_PATH="$(echo) $HOME/softwares"
 echo $ROOT_PATH
 command="$ROOT_PATH/anaconda3/bin/conda"
 

@@ -109,8 +109,8 @@ class AnalyticSoln:
         """
 
         :param alpha:           value of alpha
-        :param probability_p:   value of probabiliy p
-        :param xi_list:         independent variable xi. If None then a predefined xi_list is returned
+        :param probability_p:   value of probability p
+        :param xi_list:         independent variable xi. If None then a predefined xi_list is used and retured
         :return:
         """
         if xi_list is None:
