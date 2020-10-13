@@ -5,7 +5,7 @@ import json
 import time
 
 
-class StochasticFragmentationTemp:
+class StochasticFragmentation_v2:
     """
     Simulation for Stochastic Binary Fragmentation
     """
@@ -209,12 +209,12 @@ class StochasticFragmentationTemp:
 
 
 # df
-class NumberLengthTemp(StochasticFragmentationTemp):
+class NumberLength_v2(StochasticFragmentation_v2):
     """
     In order to find the fractal dimension
     """
     def get_signature(self):
-        return super(NumberLengthTemp, self).get_signature() + "_NumberLength"
+        return super(NumberLength_v2, self).get_signature() + "_NumberLength"
 
     def number_length(self):
         """
@@ -310,13 +310,13 @@ class NumberLengthTemp(StochasticFragmentationTemp):
 
 
 # xdf
-class MomentTemp(StochasticFragmentationTemp):
+class Moment_v2(StochasticFragmentation_v2):
     """
     finding n-th moment.
     df-th moment is always conserved.
     """
     def __init__(self, **kwargs):
-        super(MomentTemp, self).__init__(**kwargs)
+        super(Moment_v2, self).__init__(**kwargs)
         key = "fractal_dim"
         self.exponent = None
         if key in kwargs.keys():
@@ -333,7 +333,7 @@ class MomentTemp(StochasticFragmentationTemp):
         pass
 
     def get_signature(self):
-        sig = super(MomentTemp, self).get_signature()
+        sig = super(Moment_v2, self).get_signature()
         sig += "_Moment"
         return sig
 
@@ -417,13 +417,13 @@ class MomentTemp(StochasticFragmentationTemp):
 
 
 # to get the lengths after n iteration
-class TrueLengthsTemp(StochasticFragmentationTemp):
+class TrueLengths_v2(StochasticFragmentation_v2):
     """
     Segment lengths are appended to a list after `T` iteration in each realization.
     Histogram is generated from that list of segment lengths.
     """
     def __init__(self, **kwargs):
-        super(TrueLengthsTemp, self).__init__(**kwargs)
+        super(TrueLengths_v2, self).__init__(**kwargs)
         print("Turning on logging")
         self.log(True)
 
