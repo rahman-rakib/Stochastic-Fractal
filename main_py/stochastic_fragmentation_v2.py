@@ -23,8 +23,8 @@ class StochasticFragmentation_v2:
 
         # variables
         self.expon = 2 * self.alpha - 1
-        self.fragment_sum = 1.0  # normalization constant
-        self.probability_list = [1.0]
+        self.frac_sum = 1.0  # normalization constant
+        self.frac_prob = [1.0]
         self.length_list = [1.0]
         self.flag_list = [True]
         self.choose_pivot = self.betadist
@@ -60,6 +60,10 @@ class StochasticFragmentation_v2:
         self.logging = flag
 
     def get_signature(self):
+        """
+        signature for automatically generated data file.
+        :return:
+        """
         sig = "StochasticFragmentation"
         sig += "_alpha_{}".format(self.alpha)
         sig += "_p_{}".format(self.prob)
@@ -70,8 +74,8 @@ class StochasticFragmentation_v2:
         After each realization the state of the system must be reset
         :return:
         """
-        self.fragment_sum = 1.0  # normalization constant TODO
-        self.probability_list = [1.0]
+        self.frac_sum = 1.0  # normalization constant TODO
+        self.frac_prob = [1.0]
         self.length_list = [1.0]
         self.flag_list = [True]
 
@@ -85,9 +89,9 @@ class StochasticFragmentation_v2:
         decides with a given probability whether to keep the right part
         """
         if self.prob > random.random():
-            return True
+            return 1.
         else:
-            return False
+            return 0.
 
     def splitting(self, segment):
         """
@@ -101,15 +105,12 @@ class StochasticFragmentation_v2:
             change -> change of normalization const
         """
         xL = segment * self.choose_pivot()
-        xR = segment - xL
+
         flag = self.decision()
+        xR = (segment - xL) * flag
         xLp = xL ** self.expon
         xRp = xR ** self.expon
-        if flag:
-            change = xLp + xRp - segment ** self.expon
-        else:
-            change = xLp - segment ** self.expon
-            pass
+        change = xLp + xRp - segment ** self.expon
         return xL, xR, flag, xLp, xRp, change
 
     def pickindex(self):
@@ -119,12 +120,12 @@ class StochasticFragmentation_v2:
         # print("pickindex")
         # print("self.probability_list ", self.probability_list)
         r = random.uniform(0, 1.0)  # 1 is the initial particle size
-        if r > self.fragment_sum:
+        if r > self.frac_sum:
             # print("r > self.normC => return None")
             return None
         sum_ = 0
-        for index in range(len(self.probability_list)):
-            sum_ += self.probability_list[index]
+        for index in range(len(self.frac_prob)):
+            sum_ += self.frac_prob[index]
             # print("[", index, "] => ", self.probability_list[index], " .cumsum = ", sum_)
             if sum_ < r:
                 continue
@@ -141,7 +142,7 @@ class StochasticFragmentation_v2:
         print("<length>  <probability>  <flag>")
         for i in range(len(self.length_list)):
             print("{:.5e}, {:.5e}, {:5}".format(self.length_list[i],
-                                                self.probability_list[i] / self.fragment_sum,
+                                                self.frac_prob[i] / self.frac_sum,
                                                 self.flag_list[i]
                                                 ))
             pass
@@ -160,13 +161,13 @@ class StochasticFragmentation_v2:
             xL, xR, flag, xLp, xRp, change = self.splitting(self.length_list[index])
 
             self.length_list[index] = xL
-            self.probability_list[index] = xLp
+            self.frac_prob[index] = xLp
             if flag:
                 # self.flag_list.append(flag)
                 self.length_list.append(xR)
-                self.probability_list.append(xRp)
+                self.frac_prob.append(xRp)
                 pass
-            self.fragment_sum += change
+            self.frac_sum += change
             pass
 
         pass
@@ -220,8 +221,8 @@ class NumberLength_v2(StochasticFragmentation_v2):
         """
 
         :return: N, M
-            N -> number of surviving segments
-            M -> sum of sizes of `N` segments
+            N -> 0-th moment or number of surviving segments
+            M -> 1st moment or sum of sizes of `N` segments
         """
         # lengths = np.array(self.length_list)
         # lengths = lengths[self.flag_list]
@@ -235,7 +236,7 @@ class NumberLength_v2(StochasticFragmentation_v2):
         """
         One realization.
         we run the `one_time_step()` method `time_iteration` times. We record some information
-        at `iteration_step` step interval starting from `min_iteration`
+        at each `iteration_step` step interval starting from `min_iteration`
         :param time_iteration: maximum time step
         :param min_iteration: starting point to record data
         :param iteration_step: number of data points we want to generate.
@@ -247,12 +248,11 @@ class NumberLength_v2(StochasticFragmentation_v2):
         N_realization = []
         M_realization = []
         # step_size = self.get_step_size(time_iteration, min_iteration, number_of_points)
-        step_size = iteration_step
         # print("step size = ", step_size)
         for i in range(1, time_iteration + 1):
             #             print("time step ", i)
             self.one_time_step()
-            if (i >= min_iteration) and (i % step_size == 0):
+            if (i >= min_iteration) and (i % iteration_step == 0):
                 # print("t = ", i)
                 segment_count, surviving_length_sum = self.number_length()
                 N_realization.append(segment_count)
@@ -338,6 +338,10 @@ class Moment_v2(StochasticFragmentation_v2):
         return sig
 
     def k_th_moment(self):
+        """
+        returns the k-th moment for the current state of the system. Here k=`self.exponent`
+        :return:
+        """
         M_frac = 0
 
         # segment_lengths = self.length_list[self.flag_list]
@@ -349,11 +353,11 @@ class Moment_v2(StochasticFragmentation_v2):
 
         return M_frac
 
-    def run(self, time_iteration, min_iteration, number_of_points):
+    def run(self, time_iteration, start_at, iteration_step):
         """
         one realization.
         :param time_iteration: Total time iteration
-        :param min_iteration:  when to start recording
+        :param start_at:  when to start recording
         :param iteration_step: interval after which it will be recorded
         :return:
         """
@@ -365,10 +369,9 @@ class Moment_v2(StochasticFragmentation_v2):
         # iteration_list = list(range(min_iteration, time_iteration + 1, iteration_step))
 
         M_realization = []
-        step_size = int((time_iteration - min_iteration) / number_of_points)
         for i in range(time_iteration + 1):
             self.one_time_step()
-            if (i > min_iteration) and (i % step_size == 0):
+            if (i > start_at) and (i % iteration_step == 0):
                 M_frac = self.k_th_moment()
             # if i + 1 in iteration_list:
             #     M_frac = fractal_length(lengths, flags)
@@ -426,6 +429,7 @@ class TrueLengths_v2(StochasticFragmentation_v2):
         super(TrueLengths_v2, self).__init__(**kwargs)
         print("Turning on logging")
         self.log(True)
+        self.lengths_ensemble = None
 
     def get_signature(self):
         a = super().get_signature()
@@ -438,6 +442,9 @@ class TrueLengths_v2(StochasticFragmentation_v2):
         :param header_description:
         :return:
         """
+        if self.lengths_ensemble is None:
+            print("No data to write to a file")
+            return None
         filename = self.get_filename()
         header = self.get_header(header_description)
         # date_time = header['date_time']
