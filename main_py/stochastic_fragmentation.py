@@ -383,7 +383,7 @@ class Moment(StochasticFragmentation):
         # step_size = step_interval
         for i in range(time_iteration + 1):
             self.one_time_step()
-            if (i > min_iteration) and (i % step_interval == 0):
+            if (i >= min_iteration) and (i % step_interval == 0):
                 M_frac = self.k_th_moment()
             # if i + 1 in iteration_list:
             #     M_frac = fractal_length(lengths, flags)

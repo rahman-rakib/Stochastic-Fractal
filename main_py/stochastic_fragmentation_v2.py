@@ -26,7 +26,6 @@ class StochasticFragmentation_v2:
         self.frac_sum = 1.0  # normalization constant
         self.frac_prob = [1.0]
         self.length_list = [1.0]
-        self.flag_list = [True]
         self.choose_pivot = self.betadist
 
         # how many times
@@ -77,7 +76,6 @@ class StochasticFragmentation_v2:
         self.frac_sum = 1.0  # normalization constant TODO
         self.frac_prob = [1.0]
         self.length_list = [1.0]
-        self.flag_list = [True]
 
     def betadist(self):
         """gives a random number from beta distribution"""
@@ -141,9 +139,8 @@ class StochasticFragmentation_v2:
         print("keeping probability ", self.prob)
         print("<length>  <probability>  <flag>")
         for i in range(len(self.length_list)):
-            print("{:.5e}, {:.5e}, {:5}".format(self.length_list[i],
-                                                self.frac_prob[i] / self.frac_sum,
-                                                self.flag_list[i]
+            print("{:.5e}, {:.5e}".format(self.length_list[i],
+                                                self.frac_prob[i] / self.frac_sum
                                                 ))
             pass
         print("sum of all lengths : ", np.sum(self.length_list))
@@ -329,7 +326,7 @@ class Moment_v2(StochasticFragmentation_v2):
         if self.exponent is None:
             self.exponent = self.get_df()
             print("Key 'fractal_dim' or 'exponent' not found!")
-            print("Theoretical value is used")
+            print("Theoretical value is used. df = ", self.exponent)
         pass
 
     def get_signature(self):
@@ -343,14 +340,9 @@ class Moment_v2(StochasticFragmentation_v2):
         :return:
         """
         M_frac = 0
-
-        # segment_lengths = self.length_list[self.flag_list]
-        for i in range(len(self.flag_list)):
-            if self.flag_list[i]:
-                M_frac += self.length_list[i] ** self.exponent
-        # for ll in segment_lengths:
-        #     M_frac += ll**self.fractal_dim
-
+        for ll in self.length_list:
+                M_frac += ll ** self.exponent
+                pass
         return M_frac
 
     def run(self, time_iteration, start_at, iteration_step):
@@ -371,7 +363,7 @@ class Moment_v2(StochasticFragmentation_v2):
         M_realization = []
         for i in range(time_iteration + 1):
             self.one_time_step()
-            if (i > start_at) and (i % iteration_step == 0):
+            if (i >= start_at) and (i % iteration_step == 0):
                 M_frac = self.k_th_moment()
             # if i + 1 in iteration_list:
             #     M_frac = fractal_length(lengths, flags)
@@ -464,9 +456,7 @@ class TrueLengths_v2(StochasticFragmentation_v2):
             pass
 
         lengths = np.array(self.length_list)
-        true_lengths = lengths[self.flag_list]
-
-        return true_lengths
+        return lengths
 
     def run_ensemble(self, ensemble_size, time_iteration):
         """
