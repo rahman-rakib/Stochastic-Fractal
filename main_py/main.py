@@ -1,6 +1,6 @@
 
 def test_number_length():
-    from main_py.stochastic_fragmentation import NumberLength
+    from main_py.stochastic_fragmentation_v1 import NumberLength
     sfl = NumberLength(alpha=2, probability=0.75)
     sfl.log(True)
     sfl.run(100, 20, 10)
@@ -12,7 +12,7 @@ def test_number_length():
 
 
 def test_true_length():
-    from main_py.stochastic_fragmentation import TrueLengths
+    from main_py.stochastic_fragmentation_v1 import TrueLengths
     sfl = TrueLengths(alpha=2, probability=0.75)
     sfl.log(True)
     sfl.run(100)
@@ -24,7 +24,7 @@ def test_true_length():
 
 
 def test_moment():
-    from main_py.stochastic_fragmentation import Moment
+    from main_py.stochastic_fragmentation_v1 import Moment
     sfl = Moment(alpha=2, probability=0.75, exponent=0.7)
     sfl.log(True)
     a = sfl.run(1000, 500, 10)

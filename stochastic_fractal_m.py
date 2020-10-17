@@ -1,8 +1,8 @@
 
-from main_py import stochastic_fragmentation
+from main_py import stochastic_fragmentation_v1
 from main_py import stochastic_fragmentation_v2
 
-from main_py.stochastic_fragmentation import *
+from main_py.stochastic_fragmentation_v1 import *
 from main_py import analytic_solution
 from main_py.analytic_solution import AnalyticSoln
 from main_py.stochastic_fragmentation_v2 import  *
