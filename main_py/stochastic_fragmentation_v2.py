@@ -458,7 +458,7 @@ class TrueLengths_v2(StochasticFragmentation_v2):
         lengths = np.array(self.length_list)
         return lengths
 
-    def run_ensemble(self, ensemble_size, time_iteration):
+    def run_ensemble(self, ensemble_size, time_iteration, thread_id=-1, return_dict=None):
         """
         :param ensemble_size: number of independent realization
         :param time_iteration: maximum time iteration
@@ -478,10 +478,69 @@ class TrueLengths_v2(StochasticFragmentation_v2):
             length = self.run(time_iteration)
             self.lengths_ensemble = np.append(self.lengths_ensemble, length)
             if i % step_temp == 0 and self.logging:
-                print("realization ", i, " . Time spent ", (time.time() - interval_time), " sec")
+
+                if thread_id >= 0:
+                    # print("t[", thread_id, "]",  "realization ", i, " . Time spent ", (time.time() - interval_time), " sec")
+                    pass
+                else:
+                    print("realization ", i, " . Time spent ", (time.time() - interval_time), " sec")
                 interval_time = time.time()
                 pass
             pass
         print("Total time spent ", (time.time() - start_time), " sec")
-        return self.lengths_ensemble
+        if thread_id >=0:
+            return_dict[thread_id] = self.lengths_ensemble
+            pass
+        else:
+            return self.lengths_ensemble
+
+    def run_ensemble_parallel(self, ensemble_size, time_iteration, threads=2):
+        import multiprocessing as mp
+
+        thread_counts = mp.cpu_count()
+        if threads > thread_counts:
+            thread_counts = mp.cpu_count()
+        else:
+            thread_counts = threads
+            pass
+
+        if (ensemble_size < 1000) and (time_iteration < 10000):
+            print("Maybe you don't need multi threading")
+            pass
+        EN_per_thread = ensemble_size // thread_counts
+
+        manager = mp.Manager()
+        return_dict = manager.dict()
+
+        all_processes = []
+        print("thread_counts ", thread_counts)
+        for i in range(thread_counts):
+            # inargs = {'length':LL, "ensembleSize":En, "thread_count":i}
+            process = mp.Process(target=self.run_ensemble,
+                                              args=(EN_per_thread, time_iteration, i, return_dict))
+            all_processes.append(process)
+            process.start()
+
+            pass
+        for process in all_processes:
+            process.join()
+            pass
+
+        length_list = []
+        for key in return_dict.keys():
+            tolistsss = return_dict[key].tolist()
+            # print(len(tolistsss))
+            length_list += tolistsss
+            # print(length_list)
+            # print("length_list ", len(length_list))
+            pass
+        # length_list = np.array(return_dict.values())
+        return length_list
+
     pass
+
+
+if __name__ == '__main__':
+    stochastic_frag = TrueLengths_v2(alpha=3, probability=0.75)
+    ens_data_dct = stochastic_frag.run_ensemble_parallel(100, 1000, 4)  # from class
+    print(len(ens_data_dct))

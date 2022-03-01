@@ -37,3 +37,8 @@ we have used it to open jupyter notebook in this folder, where `.sh` files are.
 
 ## `stochastic_fractal_m.py` or the Fragmentation module
 This module must be run whenever one tries to run the classes in jupyter notebook or external python file.
+
+
+## Multi-threading
+For large simulation, multi threading can be used. Data can be written to file for smaller ensemble and then combine them 
+to get data for large ensemble.
